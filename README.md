@@ -10,52 +10,60 @@
 body {
     font-family: Arial;
     text-align: center;
-    padding: 20px;
+    padding: 15px;
     color: white;
     background: linear-gradient(to right,#4facfe,#00f2fe);
-    overflow-x: hidden;
-}
-
-canvas {
-    position: fixed;
-    top:0; left:0;
-    pointer-events:none;
 }
 
 .app {
-    max-width: 350px;
+    max-width: 400px;
     margin: auto;
     background: rgba(0,0,0,0.3);
-    padding: 20px;
+    padding: 15px;
     border-radius: 20px;
 }
 
-button,input {
-    padding:10px;
-    margin:5px;
-    border-radius:8px;
-    border:none;
+input, button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
 }
 
-button { background:orange; color:white; }
+button { background: orange; color: white; }
+
+.chart-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+canvas {
+    max-width: 100%;
+}
 
 .forecast {
-    display:flex;
-    overflow-x:auto;
-    gap:10px;
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
 }
 
 .card {
     background: rgba(255,255,255,0.2);
-    padding:10px;
-    border-radius:10px;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 70px;
+}
+
+.alert {
+    background: red;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
-
-<canvas id="rain"></canvas>
 
 <div class="app">
 <h2>🌦 Weather App</h2>
@@ -65,17 +73,32 @@ button { background:orange; color:white; }
 <button onclick="getWeather()">Search</button>
 
 <div id="result"></div>
-<canvas id="chart" height="150"></canvas>
+<div id="alertBox"></div>
+
+<div class="chart-container">
+    <canvas id="chart"></canvas>
+</div>
+
 <div class="forecast" id="forecast"></div>
+
+<p id="installHint" style="font-size:12px;"></p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+let chartInstance = null;
+
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
 }
 
+// Install hint
+window.addEventListener('beforeinstallprompt', e => {
+    document.getElementById("installHint").innerText = "📱 You can install this app from browser menu!";
+});
+
+// Icon
 function icon(c){
     if(c==0)return"☀️";
     if(c<=3)return"⛅";
@@ -83,38 +106,29 @@ function icon(c){
     return"⛈️";
 }
 
-// Rain animation
-const canvas=document.getElementById("rain");
-const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-let drops=[];
-for(let i=0;i<100;i++){
-    drops.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,l:Math.random()*20});
+// Weather alerts
+function showAlert(temp, code){
+    let alertBox = document.getElementById("alertBox");
+    if(temp > 40){
+        alertBox.innerHTML = "<div class='alert'>🔥 Heatwave Alert!</div>";
+    } else if(code >= 61){
+        alertBox.innerHTML = "<div class='alert'>🌧 Heavy Rain Warning!</div>";
+    } else {
+        alertBox.innerHTML = "";
+    }
 }
 
-function drawRain(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle="rgba(255,255,255,0.5)";
-    drops.forEach(d=>{
-        ctx.beginPath();
-        ctx.moveTo(d.x,d.y);
-        ctx.lineTo(d.x,d.y+d.l);
-        ctx.stroke();
-        d.y+=5;
-        if(d.y>canvas.height)d.y=0;
-    });
-    requestAnimationFrame(drawRain);
-}
-drawRain();
-
-// Weather
+// Main function
 async function getWeather(){
     let city=document.getElementById("city").value;
 
     let geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
     let g=await geo.json();
+
+    if(!g.results){
+        alert("City not found");
+        return;
+    }
 
     let {latitude,longitude,name}=g.results[0];
 
@@ -129,15 +143,37 @@ async function getWeather(){
         <p>${w.temperature}°C</p>
     `;
 
-    // Graph
-    new Chart(document.getElementById("chart"),{
+    showAlert(w.temperature, w.weathercode);
+
+    // FIXED GRAPH
+    if(chartInstance){
+        chartInstance.destroy();
+    }
+
+    let labels = d.hourly.time.slice(0,12).map(t => t.split("T")[1]);
+
+    chartInstance = new Chart(document.getElementById("chart"),{
         type:"line",
         data:{
-            labels:d.hourly.time.slice(0,12),
+            labels: labels,
             datasets:[{
-                label:"Temp",
-                data:d.hourly.temperature_2m.slice(0,12)
+                label:"Temp (°C)",
+                data:d.hourly.temperature_2m.slice(0,12),
+                fill:false,
+                tension:0.3
             }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            scales:{
+                x:{
+                    ticks:{
+                        maxRotation:0,
+                        autoSkip:true
+                    }
+                }
+            }
         }
     });
 
