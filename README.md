@@ -1,80 +1,159 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Student Information Form</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-        }
-        .container {
-            width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-        }
-        label {
-            font-weight: bold;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 6px 0 12px 0;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Pro</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    padding: 20px;
+    color: white;
+    background: linear-gradient(to right,#4facfe,#00f2fe);
+    overflow-x: hidden;
+}
+
+canvas {
+    position: fixed;
+    top:0; left:0;
+    pointer-events:none;
+}
+
+.app {
+    max-width: 350px;
+    margin: auto;
+    background: rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 20px;
+}
+
+button,input {
+    padding:10px;
+    margin:5px;
+    border-radius:8px;
+    border:none;
+}
+
+button { background:orange; color:white; }
+
+.forecast {
+    display:flex;
+    overflow-x:auto;
+    gap:10px;
+}
+
+.card {
+    background: rgba(255,255,255,0.2);
+    padding:10px;
+    border-radius:10px;
+}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>Student Information Form</h2>
-    <form action="#" method="post">
-        
-        <label for="fullname">Full Name</label>
-        <input type="text" id="fullname" name="fullname" required>
+<canvas id="rain"></canvas>
 
-        <label for="rollno">Roll Number</label>
-        <input type="text" id="rollno" name="rollno" required>
+<div class="app">
+<h2>🌦 Weather App</h2>
 
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required>
+<input id="city" placeholder="Enter city">
+<br>
+<button onclick="getWeather()">Search</button>
 
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone">
-
-        <label for="gender">Gender</label>
-        <select id="gender" name="gender">
-            <option value="">--Select--</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-        </select>
-
-        <label for="address">Address</label>
-        <textarea id="address" name="address" rows="3"></textarea>
-
-        <button type="submit">Submit</button>
-
-    </form>
+<div id="result"></div>
+<canvas id="chart" height="150"></canvas>
+<div class="forecast" id="forecast"></div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+
+function icon(c){
+    if(c==0)return"☀️";
+    if(c<=3)return"⛅";
+    if(c<=67)return"🌧️";
+    return"⛈️";
+}
+
+// Rain animation
+const canvas=document.getElementById("rain");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let drops=[];
+for(let i=0;i<100;i++){
+    drops.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,l:Math.random()*20});
+}
+
+function drawRain(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle="rgba(255,255,255,0.5)";
+    drops.forEach(d=>{
+        ctx.beginPath();
+        ctx.moveTo(d.x,d.y);
+        ctx.lineTo(d.x,d.y+d.l);
+        ctx.stroke();
+        d.y+=5;
+        if(d.y>canvas.height)d.y=0;
+    });
+    requestAnimationFrame(drawRain);
+}
+drawRain();
+
+// Weather
+async function getWeather(){
+    let city=document.getElementById("city").value;
+
+    let geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+    let g=await geo.json();
+
+    let {latitude,longitude,name}=g.results[0];
+
+    let res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m&daily=weathercode,temperature_2m_max&current_weather=true&timezone=auto`);
+    let d=await res.json();
+
+    let w=d.current_weather;
+
+    document.getElementById("result").innerHTML=`
+        <h3>${name}</h3>
+        <h1>${icon(w.weathercode)}</h1>
+        <p>${w.temperature}°C</p>
+    `;
+
+    // Graph
+    new Chart(document.getElementById("chart"),{
+        type:"line",
+        data:{
+            labels:d.hourly.time.slice(0,12),
+            datasets:[{
+                label:"Temp",
+                data:d.hourly.temperature_2m.slice(0,12)
+            }]
+        }
+    });
+
+    // Forecast
+    let html="";
+    d.daily.time.forEach((day,i)=>{
+        html+=`<div class="card">
+            <p>${new Date(day).toDateString().slice(0,3)}</p>
+            <p>${icon(d.daily.weathercode[i])}</p>
+            <p>${d.daily.temperature_2m_max[i]}°</p>
+        </div>`;
+    });
+
+    document.getElementById("forecast").innerHTML=html;
+}
+</script>
 
 </body>
 </html>
