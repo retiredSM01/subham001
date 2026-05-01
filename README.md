@@ -2,63 +2,54 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weather Pro</title>
+<title>Weather GOD Mode</title>
 
-<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    text-align: center;
-    padding: 15px;
-    color: white;
-    background: linear-gradient(to right,#4facfe,#00f2fe);
+body{
+    margin:0;
+    font-family:'Segoe UI';
+    color:white;
+    text-align:center;
+    transition:0.5s;
 }
 
-.app {
-    max-width: 400px;
-    margin: auto;
-    background: rgba(0,0,0,0.3);
-    padding: 15px;
-    border-radius: 20px;
+.app{
+    max-width:420px;
+    margin:auto;
+    padding:15px;
 }
 
-input, button {
-    padding: 10px;
-    margin: 5px;
-    border-radius: 8px;
-    border: none;
+input,button{
+    padding:10px;
+    margin:5px;
+    border:none;
+    border-radius:10px;
 }
 
-button { background: orange; color: white; }
+button{background:orange;color:white}
 
-.chart-container {
-    width: 100%;
-    overflow-x: auto;
+.card{
+    background:rgba(255,255,255,0.2);
+    margin:10px;
+    padding:10px;
+    border-radius:15px;
 }
 
-canvas {
-    max-width: 100%;
+#map{
+    height:200px;
+    border-radius:15px;
 }
 
-.forecast {
-    display: flex;
-    overflow-x: auto;
-    gap: 10px;
-}
-
-.card {
-    background: rgba(255,255,255,0.2);
-    padding: 10px;
-    border-radius: 10px;
-    min-width: 70px;
-}
-
-.alert {
-    background: red;
-    padding: 8px;
-    border-radius: 8px;
-    margin-top: 10px;
+.chat{
+    height:120px;
+    overflow:auto;
+    background:rgba(255,255,255,0.2);
+    padding:10px;
+    border-radius:10px;
 }
 </style>
 </head>
@@ -66,129 +57,161 @@ canvas {
 <body>
 
 <div class="app">
-<h2>🌦 Weather App</h2>
+<h2>🌦 Weather GOD Mode</h2>
 
 <input id="city" placeholder="Enter city">
 <br>
 <button onclick="getWeather()">Search</button>
+<button onclick="getLocationWeather()">📍</button>
 
-<div id="result"></div>
-<div id="alertBox"></div>
+<div id="main"></div>
+<div id="alert"></div>
 
-<div class="chart-container">
-    <canvas id="chart"></canvas>
+<canvas id="chart"></canvas>
+
+<div id="map"></div>
+
+<h3>🤖 AI Assistant</h3>
+<div class="chat" id="chatBox"></div>
+<input id="chatInput" placeholder="Ask about weather">
+<button onclick="chatAI()">Send</button>
+
 </div>
-
-<div class="forecast" id="forecast"></div>
-
-<p id="installHint" style="font-size:12px;"></p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-let chartInstance = null;
+let chart,map,currentWeatherData;
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-}
-
-// Install hint
-window.addEventListener('beforeinstallprompt', e => {
-    document.getElementById("installHint").innerText = "📱 You can install this app from browser menu!";
-});
-
-// Icon
+// ICON
 function icon(c){
-    if(c==0)return"☀️";
-    if(c<=3)return"⛅";
-    if(c<=67)return"🌧️";
-    return"⛈️";
+if(c==0)return"☀️";
+if(c<=3)return"⛅";
+if(c<=67)return"🌧️";
+return"⛈️";
 }
 
-// Weather alerts
-function showAlert(temp, code){
-    let alertBox = document.getElementById("alertBox");
-    if(temp > 40){
-        alertBox.innerHTML = "<div class='alert'>🔥 Heatwave Alert!</div>";
-    } else if(code >= 61){
-        alertBox.innerHTML = "<div class='alert'>🌧 Heavy Rain Warning!</div>";
-    } else {
-        alertBox.innerHTML = "";
-    }
+// MAP
+function loadMap(lat,lon){
+if(map) map.remove();
+map=L.map('map').setView([lat,lon],7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// Radar-like overlay (clouds)
+L.tileLayer('https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=demo')
+.addTo(map);
+
+L.marker([lat,lon]).addTo(map);
 }
 
-// Main function
+// ALERT SYSTEM
+function checkAlerts(temp,code){
+let alertBox=document.getElementById("alert");
+
+if(temp>40){
+alertBox.innerHTML="<div class='card'>🔥 Extreme Heat Warning</div>";
+notify("Extreme heat! Stay safe!");
+}
+else if(code>=61){
+alertBox.innerHTML="<div class='card'>🌧 Heavy Rain Alert</div>";
+notify("Rain expected. Carry umbrella.");
+}
+else{
+alertBox.innerHTML="";
+}
+}
+
+// NOTIFICATION
+function notify(msg){
+if(Notification.permission==="granted"){
+new Notification("Weather Alert",{body:msg});
+}
+}
+
+// WEATHER
 async function getWeather(){
-    let city=document.getElementById("city").value;
+let city=document.getElementById("city").value;
 
-    let geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
-    let g=await geo.json();
+let geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+let g=await geo.json();
 
-    if(!g.results){
-        alert("City not found");
-        return;
-    }
+if(!g.results){ alert("City not found"); return; }
 
-    let {latitude,longitude,name}=g.results[0];
-
-    let res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m&daily=weathercode,temperature_2m_max&current_weather=true&timezone=auto`);
-    let d=await res.json();
-
-    let w=d.current_weather;
-
-    document.getElementById("result").innerHTML=`
-        <h3>${name}</h3>
-        <h1>${icon(w.weathercode)}</h1>
-        <p>${w.temperature}°C</p>
-    `;
-
-    showAlert(w.temperature, w.weathercode);
-
-    // FIXED GRAPH
-    if(chartInstance){
-        chartInstance.destroy();
-    }
-
-    let labels = d.hourly.time.slice(0,12).map(t => t.split("T")[1]);
-
-    chartInstance = new Chart(document.getElementById("chart"),{
-        type:"line",
-        data:{
-            labels: labels,
-            datasets:[{
-                label:"Temp (°C)",
-                data:d.hourly.temperature_2m.slice(0,12),
-                fill:false,
-                tension:0.3
-            }]
-        },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            scales:{
-                x:{
-                    ticks:{
-                        maxRotation:0,
-                        autoSkip:true
-                    }
-                }
-            }
-        }
-    });
-
-    // Forecast
-    let html="";
-    d.daily.time.forEach((day,i)=>{
-        html+=`<div class="card">
-            <p>${new Date(day).toDateString().slice(0,3)}</p>
-            <p>${icon(d.daily.weathercode[i])}</p>
-            <p>${d.daily.temperature_2m_max[i]}°</p>
-        </div>`;
-    });
-
-    document.getElementById("forecast").innerHTML=html;
+let {latitude,longitude,name}=g.results[0];
+showWeather(latitude,longitude,name);
 }
+
+// LOCATION
+function getLocationWeather(){
+navigator.geolocation.getCurrentPosition(pos=>{
+showWeather(pos.coords.latitude,pos.coords.longitude,"Your Location");
+});
+}
+
+// SHOW WEATHER
+async function showWeather(lat,lon,name){
+loadMap(lat,lon);
+
+let res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m&timezone=auto`);
+let d=await res.json();
+
+let w=d.current_weather;
+currentWeatherData=w;
+
+// MAIN
+document.getElementById("main").innerHTML=`
+<div class="card">
+<h3>${name}</h3>
+<h1>${icon(w.weathercode)}</h1>
+<h2>${w.temperature}°C</h2>
+<p>Wind ${w.windspeed} km/h</p>
+</div>`;
+
+// ALERT
+checkAlerts(w.temperature,w.weathercode);
+
+// GRAPH
+if(chart) chart.destroy();
+chart=new Chart(document.getElementById("chart"),{
+type:"line",
+data:{
+labels:d.hourly.time.slice(0,12).map(t=>t.split("T")[1]),
+datasets:[{data:d.hourly.temperature_2m.slice(0,12)}]
+}
+});
+}
+
+// AI CHAT (SMARTER)
+function chatAI(){
+let input=document.getElementById("chatInput").value.toLowerCase();
+let box=document.getElementById("chatBox");
+
+let reply="Ask about weather conditions.";
+
+if(currentWeatherData){
+if(input.includes("hot")){
+reply = currentWeatherData.temperature>30 ? "Yes it's hot 🔥" : "Not too hot.";
+}
+if(input.includes("rain")){
+reply = currentWeatherData.weathercode>=61 ? "Rain likely 🌧" : "No rain expected.";
+}
+if(input.includes("wind")){
+reply = "Wind speed is " + currentWeatherData.windspeed + " km/h";
+}
+}
+
+box.innerHTML+=`<p><b>You:</b> ${input}</p>`;
+box.innerHTML+=`<p><b>AI:</b> ${reply}</p>`;
+}
+
+// REQUEST PERMISSION
+if(Notification.permission!=="granted"){
+Notification.requestPermission();
+}
+
+// DAILY NOTIFICATION (every load demo)
+setTimeout(()=>{
+notify("Check today's weather!");
+},5000);
 </script>
 
 </body>
