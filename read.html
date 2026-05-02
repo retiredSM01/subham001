@@ -8,48 +8,50 @@
 <style>
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    background: linear-gradient(135deg, #ff6ec4, #7873f5, #42e695);
+    background-size: 400% 400%;
+    animation: gradientBG 10s ease infinite;
     margin: 0;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: white;
 }
 
-/* Glassmorphism card */
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
 .container {
-    backdrop-filter: blur(15px);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.95);
     padding: 30px;
     border-radius: 20px;
     width: 350px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     text-align: center;
 }
 
 h1 {
-    margin-bottom: 10px;
+    color: #ff4081;
 }
 
-/* Inputs */
-input, select {
+input, select, button {
     width: 100%;
     padding: 12px;
     margin: 8px 0;
     border-radius: 10px;
     border: none;
-    outline: none;
+    font-size: 16px;
 }
 
-/* Button */
+input, select {
+    background: #f3f3f3;
+}
+
 button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(45deg, #ff4b2b, #ff416c);
+    background: linear-gradient(45deg, #ff4081, #7c4dff);
     color: white;
     font-weight: bold;
     cursor: pointer;
@@ -58,38 +60,15 @@ button {
 
 button:hover {
     transform: scale(1.05);
+    opacity: 0.9;
 }
 
-/* Result */
 #result {
     margin-top: 15px;
     padding: 12px;
     border-radius: 10px;
-    background: rgba(0,255,150,0.2);
-    display: none;
-}
-
-/* Loading bar */
-#loading {
-    width: 100%;
-    background: rgba(255,255,255,0.2);
-    border-radius: 10px;
-    margin-top: 15px;
-    display: none;
-}
-
-#bar {
-    width: 0%;
-    height: 10px;
-    background: #00ffcc;
-    border-radius: 10px;
-}
-
-/* Footer note */
-.note {
-    margin-top: 15px;
-    font-size: 12px;
-    opacity: 0.8;
+    font-weight: bold;
+    background: #e0ffe0;
 }
 </style>
 </head>
@@ -110,20 +89,10 @@ button:hover {
     </select>
 
     <input type="email" id="email" placeholder="Email">
-    <input type="tel" id="phone" placeholder="Phone Number">
 
     <button onclick="calculate()">Calculate Goon Time</button>
 
-    <!-- Loading bar -->
-    <div id="loading">
-        <div id="bar"></div>
-    </div>
-
-    <!-- Result -->
     <div id="result"></div>
-
-    <!-- Note -->
-    <div class="note">This is only for gooners.</div>
 </div>
 
 <script>
@@ -132,45 +101,28 @@ async function calculate() {
     const age = document.getElementById('age').value;
     const gender = document.getElementById('gender').value;
     const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
 
-    if (!name || !age || !gender || !email || !phone) {
-        alert("Fill all fields!");
+    if (!name || !age || !gender || !email) {
+        document.getElementById('result').innerHTML = "Fill all fields!";
         return;
     }
-
-    // Show loading bar
-    document.getElementById('loading').style.display = 'block';
-    let bar = document.getElementById('bar');
-    bar.style.width = '0%';
-
-    let width = 0;
-    let interval = setInterval(() => {
-        width += 10;
-        bar.style.width = width + "%";
-        if (width >= 100) clearInterval(interval);
-    }, 100);
 
     // Send data to backend
     try {
         await fetch('http://localhost:3000/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, age, gender, email, phone })
+            body: JSON.stringify({ name, age, gender, email })
         });
     } catch (err) {
-        console.log("Backend not connected");
+        console.log("Server not connected yet");
     }
 
-    // Wait for animation
-    setTimeout(() => {
-        const time = Math.floor(Math.random() * 100) + 10;
+    // Generate result
+    const time = Math.floor(Math.random() * 100) + 10;
 
-        const resultBox = document.getElementById('result');
-        resultBox.style.display = 'block';
-        resultBox.innerHTML = `${name}, your goon time is ${time} minutes 😎`;
-
-    }, 1200);
+    document.getElementById('result').innerHTML =
+        `${name}, your goon time is ${time} minutes 😎`;
 }
 </script>
 
