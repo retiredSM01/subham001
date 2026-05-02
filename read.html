@@ -1,178 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Goon Time Calculator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gooning Time Calculator</title>
+    <style>
+        /* Body with gradient background */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #1f1c2c, #928dab);
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-}
+        /* Main container with enhanced style */
+        .container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            background-color: #fff7e6; /* Light yellow background */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-/* Glassmorphism card */
-.container {
-    backdrop-filter: blur(15px);
-    background: rgba(255,255,255,0.1);
-    padding: 30px;
-    border-radius: 20px;
-    width: 350px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    text-align: center;
-}
+        .container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
 
-h1 {
-    margin-bottom: 10px;
-}
+        h1 {
+            color: #ff4081; /* Pink for title */
+            font-size: 3em;
+            margin-bottom: 10px;
+            animation: fadeIn 1s ease-out;
+        }
 
-/* Inputs */
-input, select {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-}
+        /* Input and button fields */
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
 
-/* Button */
-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(45deg, #ff4b2b, #ff416c);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
+        input {
+            background-color: #ffebee;
+            border: 2px solid #ff4081;
+        }
 
-button:hover {
-    transform: scale(1.05);
-}
+        select {
+            background-color: #ffebee;
+            border: 2px solid #ff4081;
+        }
 
-/* Result */
-#result {
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 10px;
-    background: rgba(0,255,150,0.2);
-    display: none;
-}
+        button {
+            background-color: #ff4081;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: 0.3s ease;
+        }
 
-/* Loading bar */
-#loading {
-    width: 100%;
-    background: rgba(255,255,255,0.2);
-    border-radius: 10px;
-    margin-top: 15px;
-    display: none;
-}
+        button:hover {
+            background-color: #ff3366;
+        }
 
-#bar {
-    width: 0%;
-    height: 10px;
-    background: #00ffcc;
-    border-radius: 10px;
-}
+        /* Result box with animations */
+        #result {
+            font-size: 1.5em;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+            background-color: #d1f7c4;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
 
-/* Footer note */
-.note {
-    margin-top: 15px;
-    font-size: 12px;
-    opacity: 0.8;
-}
-</style>
+        /* Error styling */
+        #result.error {
+            background-color: #ffcccb;
+        }
+
+        /* Success styling */
+        #result.success {
+            background-color: #c8e6c9;
+        }
+
+        /* Simple fade-in animation for header */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 2.5em;
+            }
+            input, select, button {
+                font-size: 1em;
+            }
+        }
+
+    </style>
 </head>
-
 <body>
 
-<div class="container">
-    <h1>Goon Time Calculator</h1>
+    <div class="container">
+        <h1>Gooning Time Calculator</h1>
+        <p>Enter your details to calculate your personalized gooning time!</p>
 
-    <input type="text" id="name" placeholder="Name">
-    <input type="number" id="age" placeholder="Age">
-    
-    <select id="gender">
-        <option value="">Gender</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
-    </select>
+        <!-- Input fields for more personal data -->
+        <input type="text" id="name" placeholder="Enter your name">
+        <input type="number" id="age" placeholder="Enter your age" min="1">
+        <select id="gender">
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select>
+        <input type="email" id="email" placeholder="Enter your email">
+        
+        <button onclick="calculateGooningTime()">Calculate Gooning Time</button>
 
-    <input type="email" id="email" placeholder="Email">
-    <input type="tel" id="phone" placeholder="Phone Number">
-
-    <button onclick="calculate()">Calculate Goon Time</button>
-
-    <!-- Loading bar -->
-    <div id="loading">
-        <div id="bar"></div>
+        <h2 id="result"></h2>
     </div>
 
-    <!-- Result -->
-    <div id="result"></div>
+    <script>
+        function calculateGooningTime() {
+            // Collecting input values
+            var name = document.getElementById('name').value;
+            var age = document.getElementById('age').value;
+            var gender = document.getElementById('gender').value;
+            var email = document.getElementById('email').value;
 
-    <!-- Note -->
-    <div class="note">This is only for gooners.</div>
-</div>
+            // Validation for empty fields
+            if (name === '' || age === '' || age <= 0 || gender === '' || email === '') {
+                document.getElementById('result').innerHTML = 'Please fill out all the fields!';
+                document.getElementById('result').classList.add('error');
+                document.getElementById('result').classList.remove('success');
+                return;
+            }
 
-<script>
-async function calculate() {
-    const name = document.getElementById('name').value;
-    const age = document.getElementById('age').value;
-    const gender = document.getElementById('gender').value;
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
+            // Random gooning time logic
+            var minTime = 10; // Min time: 10 minutes
+            var maxTime = 120; // Max time: 120 minutes
+            var randomTime = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
 
-    if (!name || !age || !gender || !email || !phone) {
-        alert("Fill all fields!");
-        return;
-    }
+            // Personalizing the message based on input
+            document.getElementById('result').innerHTML = `${name}, your gooning time is: ${randomTime} minutes`;
+            
+            if (gender === 'male') {
+                document.getElementById('result').innerHTML += `<br>Enjoy your time, bro!`;
+            } else if (gender === 'female') {
+                document.getElementById('result').innerHTML += `<br>Enjoy your time, girl!`;
+            } else {
+                document.getElementById('result').innerHTML += `<br>Enjoy your time, friend!`;
+            }
 
-    // Show loading bar
-    document.getElementById('loading').style.display = 'block';
-    let bar = document.getElementById('bar');
-    bar.style.width = '0%';
-
-    let width = 0;
-    let interval = setInterval(() => {
-        width += 10;
-        bar.style.width = width + "%";
-        if (width >= 100) clearInterval(interval);
-    }, 100);
-
-    // Send data to backend
-    try {
-        await fetch('http://localhost:3000/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, age, gender, email, phone })
-        });
-    } catch (err) {
-        console.log("Backend not connected");
-    }
-
-    // Wait for animation
-    setTimeout(() => {
-        const time = Math.floor(Math.random() * 100) + 10;
-
-        const resultBox = document.getElementById('result');
-        resultBox.style.display = 'block';
-        resultBox.innerHTML = `${name}, your goon time is ${time} minutes 😎`;
-
-    }, 1200);
-}
-</script>
+            // Success message and style
+            document.getElementById('result').classList.add('success');
+            document.getElementById('result').classList.remove('error');
+        }
+    </script>
 
 </body>
 </html>
