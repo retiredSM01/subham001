@@ -1,217 +1,178 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weather GOD Mode</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goon Time Calculator</title>
 
 <style>
-body{
-    margin:0;
-    font-family:'Segoe UI';
-    color:white;
-    text-align:center;
-    transition:0.5s;
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
 }
 
-.app{
-    max-width:420px;
-    margin:auto;
-    padding:15px;
+/* Glassmorphism card */
+.container {
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.1);
+    padding: 30px;
+    border-radius: 20px;
+    width: 350px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
 }
 
-input,button{
-    padding:10px;
-    margin:5px;
-    border:none;
-    border-radius:10px;
+h1 {
+    margin-bottom: 10px;
 }
 
-button{background:orange;color:white}
-
-.card{
-    background:rgba(255,255,255,0.2);
-    margin:10px;
-    padding:10px;
-    border-radius:15px;
+/* Inputs */
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: none;
+    outline: none;
 }
 
-#map{
-    height:200px;
-    border-radius:15px;
+/* Button */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(45deg, #ff4b2b, #ff416c);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
-.chat{
-    height:120px;
-    overflow:auto;
-    background:rgba(255,255,255,0.2);
-    padding:10px;
-    border-radius:10px;
+button:hover {
+    transform: scale(1.05);
+}
+
+/* Result */
+#result {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(0,255,150,0.2);
+    display: none;
+}
+
+/* Loading bar */
+#loading {
+    width: 100%;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    margin-top: 15px;
+    display: none;
+}
+
+#bar {
+    width: 0%;
+    height: 10px;
+    background: #00ffcc;
+    border-radius: 10px;
+}
+
+/* Footer note */
+.note {
+    margin-top: 15px;
+    font-size: 12px;
+    opacity: 0.8;
 }
 </style>
 </head>
 
 <body>
 
-<div class="app">
-<h2>🌦 Weather GOD Mode</h2>
+<div class="container">
+    <h1>Goon Time Calculator</h1>
 
-<input id="city" placeholder="Enter city">
-<br>
-<button onclick="getWeather()">Search</button>
-<button onclick="getLocationWeather()">📍</button>
+    <input type="text" id="name" placeholder="Name">
+    <input type="number" id="age" placeholder="Age">
+    
+    <select id="gender">
+        <option value="">Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+    </select>
 
-<div id="main"></div>
-<div id="alert"></div>
+    <input type="email" id="email" placeholder="Email">
+    <input type="tel" id="phone" placeholder="Phone Number">
 
-<canvas id="chart"></canvas>
+    <button onclick="calculate()">Calculate Goon Time</button>
 
-<div id="map"></div>
+    <!-- Loading bar -->
+    <div id="loading">
+        <div id="bar"></div>
+    </div>
 
-<h3>🤖 AI Assistant</h3>
-<div class="chat" id="chatBox"></div>
-<input id="chatInput" placeholder="Ask about weather">
-<button onclick="chatAI()">Send</button>
+    <!-- Result -->
+    <div id="result"></div>
 
+    <!-- Note -->
+    <div class="note">This is only for gooners.</div>
 </div>
 
 <script>
-let chart,map,currentWeatherData;
+async function calculate() {
+    const name = document.getElementById('name').value;
+    const age = document.getElementById('age').value;
+    const gender = document.getElementById('gender').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
 
-// ICON
-function icon(c){
-if(c==0)return"☀️";
-if(c<=3)return"⛅";
-if(c<=67)return"🌧️";
-return"⛈️";
+    if (!name || !age || !gender || !email || !phone) {
+        alert("Fill all fields!");
+        return;
+    }
+
+    // Show loading bar
+    document.getElementById('loading').style.display = 'block';
+    let bar = document.getElementById('bar');
+    bar.style.width = '0%';
+
+    let width = 0;
+    let interval = setInterval(() => {
+        width += 10;
+        bar.style.width = width + "%";
+        if (width >= 100) clearInterval(interval);
+    }, 100);
+
+    // Send data to backend
+    try {
+        await fetch('http://localhost:3000/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, age, gender, email, phone })
+        });
+    } catch (err) {
+        console.log("Backend not connected");
+    }
+
+    // Wait for animation
+    setTimeout(() => {
+        const time = Math.floor(Math.random() * 100) + 10;
+
+        const resultBox = document.getElementById('result');
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = `${name}, your goon time is ${time} minutes 😎`;
+
+    }, 1200);
 }
-
-// MAP
-function loadMap(lat,lon){
-if(map) map.remove();
-map=L.map('map').setView([lat,lon],7);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-// Radar-like overlay (clouds)
-L.tileLayer('https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=demo')
-.addTo(map);
-
-L.marker([lat,lon]).addTo(map);
-}
-
-// ALERT SYSTEM
-function checkAlerts(temp,code){
-let alertBox=document.getElementById("alert");
-
-if(temp>40){
-alertBox.innerHTML="<div class='card'>🔥 Extreme Heat Warning</div>";
-notify("Extreme heat! Stay safe!");
-}
-else if(code>=61){
-alertBox.innerHTML="<div class='card'>🌧 Heavy Rain Alert</div>";
-notify("Rain expected. Carry umbrella.");
-}
-else{
-alertBox.innerHTML="";
-}
-}
-
-// NOTIFICATION
-function notify(msg){
-if(Notification.permission==="granted"){
-new Notification("Weather Alert",{body:msg});
-}
-}
-
-// WEATHER
-async function getWeather(){
-let city=document.getElementById("city").value;
-
-let geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
-let g=await geo.json();
-
-if(!g.results){ alert("City not found"); return; }
-
-let {latitude,longitude,name}=g.results[0];
-showWeather(latitude,longitude,name);
-}
-
-// LOCATION
-function getLocationWeather(){
-navigator.geolocation.getCurrentPosition(pos=>{
-showWeather(pos.coords.latitude,pos.coords.longitude,"Your Location");
-});
-}
-
-// SHOW WEATHER
-async function showWeather(lat,lon,name){
-loadMap(lat,lon);
-
-let res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m&timezone=auto`);
-let d=await res.json();
-
-let w=d.current_weather;
-currentWeatherData=w;
-
-// MAIN
-document.getElementById("main").innerHTML=`
-<div class="card">
-<h3>${name}</h3>
-<h1>${icon(w.weathercode)}</h1>
-<h2>${w.temperature}°C</h2>
-<p>Wind ${w.windspeed} km/h</p>
-</div>`;
-
-// ALERT
-checkAlerts(w.temperature,w.weathercode);
-
-// GRAPH
-if(chart) chart.destroy();
-chart=new Chart(document.getElementById("chart"),{
-type:"line",
-data:{
-labels:d.hourly.time.slice(0,12).map(t=>t.split("T")[1]),
-datasets:[{data:d.hourly.temperature_2m.slice(0,12)}]
-}
-});
-}
-
-// AI CHAT (SMARTER)
-function chatAI(){
-let input=document.getElementById("chatInput").value.toLowerCase();
-let box=document.getElementById("chatBox");
-
-let reply="Ask about weather conditions.";
-
-if(currentWeatherData){
-if(input.includes("hot")){
-reply = currentWeatherData.temperature>30 ? "Yes it's hot 🔥" : "Not too hot.";
-}
-if(input.includes("rain")){
-reply = currentWeatherData.weathercode>=61 ? "Rain likely 🌧" : "No rain expected.";
-}
-if(input.includes("wind")){
-reply = "Wind speed is " + currentWeatherData.windspeed + " km/h";
-}
-}
-
-box.innerHTML+=`<p><b>You:</b> ${input}</p>`;
-box.innerHTML+=`<p><b>AI:</b> ${reply}</p>`;
-}
-
-// REQUEST PERMISSION
-if(Notification.permission!=="granted"){
-Notification.requestPermission();
-}
-
-// DAILY NOTIFICATION (every load demo)
-setTimeout(()=>{
-notify("Check today's weather!");
-},5000);
 </script>
 
 </body>
